@@ -7,5 +7,4 @@ Dockerfile
 README.md
 tests
 jest.config.ts
-tsconfig.json
 npm-debug.log
