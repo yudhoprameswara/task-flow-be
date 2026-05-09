@@ -27,8 +27,10 @@ const swaggerOptions: swaggerJsdoc.Options = {
     },
     servers: [
       {
-        url: `http://localhost:${process.env.PORT ?? 5000}`,
-        description: 'Development server',
+        url: process.env.NODE_ENV === 'production' 
+          ? 'https://your-render-app-url.onrender.com' // User should update this or use a generic one
+          : `http://localhost:${process.env.PORT ?? 5000}`,
+        description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server',
       },
     ],
     components: {
@@ -41,7 +43,12 @@ const swaggerOptions: swaggerJsdoc.Options = {
       },
     },
   },
-  apis: ['./src/routes/*.ts'], // Scan route files for @swagger annotations
+  // In production, the files are .js in the dist folder. In development, they are .ts in the src folder.
+  apis: [
+    process.env.NODE_ENV === 'production' 
+      ? './dist/routes/*.js' 
+      : './src/routes/*.ts'
+  ],
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
@@ -83,9 +90,17 @@ app.use(errorHandler);
 const PORT = parseInt(process.env.PORT ?? '5000', 10);
 
 const startServer = async (): Promise<void> => {
+  // Check critical environment variables
+  if (!process.env.JWT_SECRET) {
+    console.warn('⚠️ WARNING: JWT_SECRET is not defined. Authentication will fail.');
+  }
+
   await connectDB();
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running at http://localhost:${PORT}`);
+
+  const host = '0.0.0.0'; // Bind to all interfaces for cloud deployment
+  app.listen(PORT, host, () => {
+    console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode`);
+    console.log(`📡 Listening on http://${host}:${PORT}`);
     console.log(`📚 API Docs available at http://localhost:${PORT}/api-docs`);
   });
 };
